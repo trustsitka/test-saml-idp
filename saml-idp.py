@@ -132,7 +132,7 @@ def sign(el_to_sign):
     return signature
 
 
-def make_assertion(resp, acs, irt, iss, username, validity, sp_entity_id):
+def make_assertion(resp, acs, irt, iss, username, validity, sp_entity_id, uid):
     assertion = subelement(resp, 'saml2:Assertion',
                            attrib={'ID': make_id(),
                                    'IssueInstant': tsnow(),
@@ -149,7 +149,8 @@ def make_assertion(resp, acs, irt, iss, username, validity, sp_entity_id):
                attrib={'InResponseTo': irt,
                        'NotOnOrAfter': tsnow(validity),
                        'Recipient': acs})
-    # new stuff
+
+    # minimal required for Okta to create a new user
     attribute_statement = subelement(assertion, 'saml2:AttributeStatement')
     email_attr = subelement(attribute_statement, 'saml2:Attribute', attrib={
         "Name": "email", 
@@ -171,8 +172,15 @@ def make_assertion(resp, acs, irt, iss, username, validity, sp_entity_id):
         })
     last_val = subelement(last_attr, "saml2:AttributeValue")
     last_val.text="Last"
+    
+    # optional uid field, which can get saved as external_user_id if mapped to do so in Okta
+    uid_attr = subelement(attribute_statement, 'saml2:Attribute', attrib={
+        "Name": "uid", 
+        "NameFormat": "urn:oasis:names:tc:SAML:2.0:attrname-format:basic"
+        })
+    uid_val = subelement(uid_attr, "saml2:AttributeValue")
+    uid_val.text=uid
 
-    # end
     cond = subelement(assertion, 'saml2:Conditions',
                       attrib={'NotBefore': tsnow(-validity),
                               'NotOnOrAfter': tsnow(validity)})
@@ -186,7 +194,7 @@ def make_assertion(resp, acs, irt, iss, username, validity, sp_entity_id):
     return assertion, issuer  # sig must be placed after issuer (xsl doc)
 
 
-def make_response(acs, irt, iss, username, sp_entity_id,
+def make_response(acs, irt, iss, username, sp_entity_id, uid,
                   sign_assertion=True,
                   sign_response=False,
                   validity=300):
@@ -201,7 +209,7 @@ def make_response(acs, irt, iss, username, sp_entity_id,
     subelement(status, 'samlp:StatusCode',
                attrib={'Value': status_success})
     assertion, as_issuer = make_assertion(resp, acs, irt, iss, username,
-                                          validity, sp_entity_id)
+                                          validity, sp_entity_id, uid)
 
     ET.cleanup_namespaces(resp)
     if sign_assertion:
@@ -252,8 +260,9 @@ def root():
     relay_state = request.values.get('RelayState')
     return f'''<HTML><BODY><CENTER><H1>Login - Step 1</H1>
 <FORM ACTION="https://{HOST}:{PORT}/login" METHOD=POST>
-Service Provider Metadata Entity ID +/-: <INPUT TYPE=TEXT NAME="sp_entity_id" VALUE="https://www.okta.com/saml2/service-provider/spkrktcxhbfmkgfelqsv"><BR>
-Username: <INPUT TYPE=TEXT VALUE="change_me@example.org" NAME="username"><BR>
+* Service Provider Metadata Entity ID (change me) +/-: <INPUT TYPE=TEXT NAME="sp_entity_id" VALUE="https://www.okta.com/saml2/service-provider/<entity_id>"><BR>
+* Username: <INPUT TYPE=TEXT VALUE="change_me@example.org" NAME="username"><BR>
+* External User ID: <INPUT TYPE=TEXT VALUE="" NAME="uid"><BR>
 InResponseTo: <INPUT TYPE=TEXT VALUE="{id_}" NAME="irt"><BR>
 IssueInstant: <INPUT TYPE=TEXT VALUE="{iss}" NAME="iss"><BR>
 ACS: <INPUT TYPE=TEXT VALUE="{acs}" NAME="acs"><BR>
@@ -272,8 +281,10 @@ def login():
     relay_state = request.values.get('RelayState')
     username = request.values.get('username')
     sp_entity_id = request.values.get('sp_entity_id')
+    uid = request.values.get('uid')
+
     response_xml = c14n(make_response(
-        acs, irt, iss, username, sp_entity_id,
+        acs, irt, iss, username, sp_entity_id, uid,
         validity=int(request.values.get('valid')),
         sign_assertion=request.values.get('sa'),
         sign_response=request.values.get('sr')))
