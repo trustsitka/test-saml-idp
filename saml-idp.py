@@ -260,7 +260,7 @@ def root():
     relay_state = request.values.get('RelayState')
     return f'''<HTML><BODY><CENTER><H1>Login - Step 1</H1>
 <FORM ACTION="https://{HOST}:{PORT}/login" METHOD=POST>
-* Service Provider Metadata Entity ID (change me) +/-: <INPUT TYPE=TEXT NAME="sp_entity_id" VALUE="https://www.okta.com/saml2/service-provider/<entity_id>"><BR>
+* Service Provider Metadata Entity ID (change me) +/-: <INPUT TYPE=TEXT NAME="sp_entity_id" VALUE="https://www.okta.com/saml2/service-provider/spkrktcxhbfmkgfelqsv"><BR>
 * Username: <INPUT TYPE=TEXT VALUE="change_me@example.org" NAME="username"><BR>
 * External User ID: <INPUT TYPE=TEXT VALUE="" NAME="uid"><BR>
 InResponseTo: <INPUT TYPE=TEXT VALUE="{id_}" NAME="irt"><BR>
