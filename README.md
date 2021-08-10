@@ -2,8 +2,6 @@
 
 ## Using test-saml-idp at Sitka
 
-* If using locally against the existing okta dev IDP, ask Renaud or Micah for the test certificates and save to this folder.
-
 ### One time setup
 ```python
 python3 -m venv venv
@@ -18,9 +16,9 @@ python3 saml-idp.py
 ```
 
 ### Testing
-* have all the sitka api and web services running like normal
-* when redirected to okta to login, enter a domain that is routed to the test saml in okta settings (e.g. test@dataconcise.com)
-* for any certificate warnings, click "Advanced" then proceed despite warning.  This is a standard warning for self-signed certs.
+* Have all the sitka api and web services running like normal.
+* When redirected to okta to login, enter a domain that is routed to the test saml in okta settings (e.g. test@dataconcise.com).
+* For any certificate warnings, click "Advanced" then proceed despite the warning.  This is a standard warning for self-signed certs.
 * For the username, enter any valid email.  Note that the email will get written to the Sitka user on successful login.
 * For the External User ID, this will get matched to the existing User.external_user_id in Sitka's database if the idp_id of the user is `0oa13b51s1ItyodrM1d7`.
 * Click submit, then submit again.  You should be redirected back to the local sitka dev server and be authenticated as that user. 
